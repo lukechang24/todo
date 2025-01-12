@@ -1,5 +1,5 @@
 import S from "./style"
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 
 const TodoList = () => {
   const [item, setItem] = useState<string>("")
@@ -9,7 +9,8 @@ const TodoList = () => {
   const handleItem = (e: any) => {
     setItem(e.target.value)
   }
-  const addItem = () => {
+  const addItem = (e: any) => {
+    e.preventDefault()
     if (item) {
       setList([...list, item])
       setItem("")
@@ -20,41 +21,62 @@ const TodoList = () => {
     updatedList.splice(index, 1)
     setList(updatedList)
   }
-  const handleEditIndex = (e: any, index : number, todo: string) => {
-    console.log(index)
-    setEditIndex(index)
+  const beginEdit = (e: any, index : number, todo: string) => {
+    setEditIndex(index + 1)
     setEditItem(todo)
+    const inputEl = document.getElementById(`edit${index}`)
+    setTimeout(() => {
+      inputEl.focus()
+    }, 50)
   }
   const handleEdit = (e: any) => {
     setEditItem(e.target.value)
   }
-  const handleEditItem = (index: number) => {
+  const submitEdit = (e: any, index: number) => {
+    e.preventDefault()
     const updatedList = [...list]
     updatedList[index] = editItem
     setList(updatedList)
     setEditIndex(null)
     setEditItem("")
   }
+  const cancelEdit = useCallback((e: any) => {
+    const element = e.target.tagName
+    console.log(element, "outside")
+    if (element !== "INPUT" && element !== "LI" && editIndex) {
+      console.log(element)
+      setEditIndex(null);
+      setEditItem("");
+    }
+  }, [editIndex])
   useEffect(() => {
-    console.log(list)
-  }, [list])
+    const handleClick = (e: any) => cancelEdit(e)
+    window.addEventListener("click", handleClick)
+    return () => {
+      window.removeEventListener("click", handleClick);
+    };
+  }, [cancelEdit])
   return (
-    <div>
-      <input onChange={handleItem} value={item}></input>
-      <button onClick={addItem}>add</button>
+    <S.List>
+      <form onSubmit={addItem}>
+        <S.TodoInput onChange={handleItem} value={item}></S.TodoInput>
+        <S.AddButton onClick={addItem}>add</S.AddButton>
+      </form>
      {list.map((todo, i) => (
         <S.Todo key={i}>
-          <S.ItemBlock editing={i === editIndex}>
-            <S.Item onClick={(e: any) => handleEditIndex(e, i, todo)}>{todo}</S.Item>
+          <S.ItemBlock editing={i === editIndex - 1}>
+            <S.Item onClick={(e: any) => beginEdit(e, i, todo)}>{todo}</S.Item>
             <S.Delete onClick={() => removeItem(i)}>X</S.Delete>
           </S.ItemBlock>
-            <S.EditingBlock editing={i === editIndex}>
-              <S.Edit value={editItem} onChange={handleEdit}></S.Edit>
-              <S.SubmitChange onClick={(e: any) => handleEditItem(i)}>V</S.SubmitChange>
-            </S.EditingBlock>
+            <form onSubmit={(e: any) => submitEdit(e, i)}>
+              <S.EditingBlock editing={i === editIndex - 1}>
+                <S.Edit id={`edit${i}`} value={editItem} onChange={handleEdit}></S.Edit>
+                <S.SubmitChange onClick={(e: any) => submitEdit(e, i)}>SAVE</S.SubmitChange>
+              </S.EditingBlock>
+            </form>
         </S.Todo>
      ))}
-    </div>
+    </S.List>
   );
 }
 
