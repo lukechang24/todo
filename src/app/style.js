@@ -28,18 +28,26 @@ const GlobalStyle = createGlobalStyle`
     border: 2px solid #ccc; /* Subtle border */
     border-radius: 4px;
     padding: 4px 10px;
-    cursor: pointer;
+    margin-left: 15px;
     transition: all 0.3s ease;
-    /* Minimal hover effect */
     &:hover {
       background-color: #f4f4f4; /* Light gray background */
       border-color: #999; /* Darken the border */
     }
+  }
 
-    /* Focus outline */
+  svg {
+    &:hover {
+      color: black;
+    }
+  }
+
+  button, svg {
+    cursor: pointer;
+    transition: all 0.3s ease;
     &:focus {
-      outline: none;
-      border-color: #333; /* Dark border on focus */
+    outline: none;
+    border-color: #333; /* Dark border on focus */
     }
   }
 `;
