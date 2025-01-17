@@ -1,11 +1,14 @@
+'use client'
 import S from "./style"
 import React, { useState, useEffect, useCallback } from "react"
 
+
 const TodoList = () => {
   const [item, setItem] = useState<string>("")
-  const [list, setList] = useState<Array<string>>([])
+  const [list, setList] = useState<Array<string>>(window.localStorage.getItem('list') === null ? [] : JSON.parse(window.localStorage.getItem('list')))
   const [editItem, setEditItem] = useState<string>("")
   const [editIndex, setEditIndex] = useState<number>(0)
+  const [deletingIndex, setDeletingIndex] = useState<number>(0)
 
   const handleItem = (e: any) => {
     setItem(e.target.value)
@@ -13,23 +16,24 @@ const TodoList = () => {
 
   const addItem = (e: any) => {
     e.preventDefault()
-    if (item) {
+    if (item.trim()) {
       setList([...list, item])
       setItem("")
     }
   }
 
   const removeItem = (index: number) => {
-    setList(list.filter((el, i) => i !== index))
+    setDeletingIndex(index+1)
+    setTimeout(() => {
+      setList(list.filter((el, i) => i !== index))
+      setDeletingIndex(0)
+    }, 275)
   }
 
   const beginEdit = (e: any, index : number, todo: string) => {
     setEditIndex(index + 1)
     setEditItem(todo)
-    const inputEl = document.getElementById(`edit${index}`)
-    setTimeout(() => {
-      inputEl.focus()
-    }, 50)
+    focus(index)
   }
 
   const handleEdit = (e: any) => {
@@ -41,16 +45,16 @@ const TodoList = () => {
     const updatedList = [...list]
     updatedList[index] = editItem
     setList(updatedList)
-    setEditIndex(null)
+    setEditIndex(0)
     setEditItem("")
   }
 
   const cancelEdit = useCallback((e: any) => {
     const element = e.target.tagName
-    if (element !== "INPUT" && element !== "LI" && element !== "svg" && element !== "path" && editIndex) {
-      console.log(element, "THIS")
-      setEditIndex(null);
-      setEditItem("");
+    console.log(element)
+    if (!['INPUT', 'LI', 'svg', 'path', 'TEXTAREA'].includes(element) && editIndex) {
+      setEditIndex(0);
+      setEditItem('');
     }
   }, [editIndex])
 
@@ -60,8 +64,7 @@ const TodoList = () => {
     const temp = updatedList[index]
     updatedList[index] = updatedList[index - 1]
     updatedList[index - 1] = temp
-    setEditIndex(editIndex - 1)
-    console.log(editIndex, "this")
+    setEditIndex(prev => prev - 1)
     setList(updatedList)
   }
 
@@ -71,34 +74,50 @@ const TodoList = () => {
     const temp = updatedList[index]
     updatedList[index] = updatedList[index + 1]
     updatedList[index + 1] = temp
-    setEditIndex(editIndex + 1)
+    setEditIndex(prev => prev + 1)
     setList(updatedList)
   }
 
-  useEffect(() => {console.log(editIndex)}, [editIndex])
+  const focus = (index: number) => {
+    const inputEl = document.getElementById(`edit${index}`)
+    setTimeout(() => {
+      inputEl.focus()
+    }, 50)
+  }
+
+  useEffect(() => { 
+    if (editIndex) {
+      focus(editIndex)
+    }
+  }, [editIndex])
 
   useEffect(() => {
     const handleClick = (e: any) => cancelEdit(e)
     window.addEventListener("click", handleClick)
     return () => {
       window.removeEventListener("click", handleClick);
-    };
+    }
   }, [cancelEdit])
+
+  useEffect(() => {
+    localStorage.setItem('list', JSON.stringify(list));
+  }, [list])
+
   return (
     <S.List>
       <S.AddForm onSubmit={addItem}>
         <S.TodoInput onChange={handleItem} value={item}></S.TodoInput>
-        <S.AddButton onClick={addItem}>add</S.AddButton>
+        <S.AddButton onClick={addItem}>Add Task</S.AddButton>
       </S.AddForm>
      {list.map((todo, i) => (
-        <S.Todo key={i}>
+        <S.Todo isDeleting={deletingIndex === i + 1} key={i}>
           <S.ItemBlock editing={i === editIndex - 1}>
-            <S.Item draggable onClick={(e: any) => beginEdit(e, i, todo)}>{todo}</S.Item>
+            <S.Item onClick={(e: any) => beginEdit(e, i, todo)}>{todo}</S.Item>
             <S.Delete onClick={() => removeItem(i)}>X</S.Delete>
           </S.ItemBlock>
             <form onSubmit={(e: any) => submitEdit(e, i)}>
               <S.EditingBlock editing={i === editIndex - 1}>
-                <S.Edit id={`edit${i}`} value={editItem} onChange={handleEdit}></S.Edit>
+                <S.Edit id={`edit${i+1}`} value={editItem} onChange={handleEdit}></S.Edit>
                 <S.ArrowContainer>
                   <S.Up onClick={() => moveItemUp(i)}></S.Up>
                   <S.Down onClick={() => moveItemDown(i)}></S.Down>
@@ -108,6 +127,7 @@ const TodoList = () => {
             </form>
         </S.Todo>
      ))}
+     <S.Message isEmpty={list.length === 0}>no todos for now...</S.Message>
     </S.List>
   );
 }

@@ -1,5 +1,5 @@
 // styles/GlobalStyle.ts
-import { createGlobalStyle } from 'styled-components';
+import { styled, createGlobalStyle } from 'styled-components';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -28,7 +28,7 @@ const GlobalStyle = createGlobalStyle`
     border: 2px solid #ccc; /* Subtle border */
     border-radius: 4px;
     padding: 4px 10px;
-    margin-left: 15px;
+    margin-left: 8px;
     transition: all 0.3s ease;
     &:hover {
       background-color: #f4f4f4; /* Light gray background */
@@ -53,5 +53,9 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 const S = {}
+
+S.Title = styled.h1`
+  margin: 15px 0;
+`
 
 export { GlobalStyle, S };
